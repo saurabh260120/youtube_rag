@@ -30,7 +30,7 @@ export default function AskQuestion() {
     setAnswer('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/userQuery', {
+      const response = await fetch('http://16.113.44.255/userQuery', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

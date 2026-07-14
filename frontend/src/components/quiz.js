@@ -25,7 +25,7 @@ export default function Quiz() {
         setScore({ correct: 0, incorrect: 0 });
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/generateQuiz', {
+            const response = await fetch('http://16.113.44.255/generateQuiz', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
