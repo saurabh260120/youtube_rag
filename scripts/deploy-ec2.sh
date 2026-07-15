@@ -25,15 +25,7 @@ python3 -m venv .venv
 pip install --upgrade pip
 pip install -r requirements.txt
 
-cat > .env <<EOF
-OPENAI_API_KEY=${OPENAI_API_KEY:-}
-GROQ_API_KEY=${GROQ_API_KEY:-}
-GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-PINECONE_API_KEY=${PINECONE_API_KEY:-}
-PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-}
-MONGO_URI=${MONGO_URI:-}
-RABBITMQ_URL=${RABBITMQ_URL:-}
-EOF
+
 
 mkdir -p logs
 

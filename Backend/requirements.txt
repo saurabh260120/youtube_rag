@@ -22,3 +22,4 @@ email-validator
 httpx
 google-genai
 groq
+google-api-python-client
