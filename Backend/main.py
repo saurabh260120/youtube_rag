@@ -18,11 +18,13 @@ from db.connection import client
 
 app = FastAPI()
 
-allow_origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "http://localhost:8000"
-]
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+allow_origins = os.getenv("ALLOWED_CORS_ORIGINS", "").split(",")
+
 
 app.add_middleware(
     CORSMiddleware,
