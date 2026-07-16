@@ -2,6 +2,7 @@ import aio_pika
 from dotenv import load_dotenv
 load_dotenv()
 import os
+from utility.logger import log
 
 RABBIT_URL = os.getenv("AMQP_URL")
 
@@ -17,11 +18,12 @@ async def connect():
     if not RABBIT_URL:
         raise RuntimeError("AMQP_URL is not configured")
 
+    log("Connecting to RabbitMQ...")
     connection = await aio_pika.connect_robust(RABBIT_URL)
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=10)
 
-    print("RabbitMQ Connected")
+    log("RabbitMQ Connected successfully")
 
     return channel
 

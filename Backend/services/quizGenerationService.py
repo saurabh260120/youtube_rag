@@ -1,4 +1,3 @@
-
 from email import utils
 
 from db.connection import client
@@ -6,6 +5,7 @@ collection = client["quizDB"]["quizCollection"]
 
 from services.transcriptService import get_trans
 from utility.youtubeUrlToId import urlToId
+from utility.logger import log
 
 from llm import llm
 
@@ -25,33 +25,38 @@ def sanitize_quiz_doc(doc: dict) -> dict:
 
 
 
-
 async def generateQuiz(yt_url: str):
 
     video_id = urlToId(yt_url)
+    log(f"generateQuiz: Starting quiz generation for video_id={video_id}, url={yt_url}")
+
     # first check if the quiz already exists in the database
     existing_quiz = collection.find_one({"video_id": video_id})
 
     if existing_quiz:
         if existing_quiz.get("is_educational") is False:
+            log(f"generateQuiz: Video {video_id} is marked as non-educational, aborting")
             return {"message": "The video content is not educational. Quiz generation aborted."}
+        log(f"generateQuiz: Quiz already exists for video {video_id}, returning cached result")
         return {
             "message": "Quiz already exists for the given video ID",
             "quiz": sanitize_quiz_doc(existing_quiz),
         }
 
+    log(f"generateQuiz: No existing quiz for video {video_id}, fetching transcript...")
     transcript = get_trans(video_id)
     if(transcript is None):
+        log(f"generateQuiz: Transcript not found for video {video_id}")
         return {"message": "Transacript not found for the given video ID"}
-    
-    print("Transcript pushing to RabbitMQ queue for processing...")
-    
+
+    log(f"generateQuiz: Transcript fetched successfully for video {video_id} ({len(transcript)} segments), pushing to RabbitMQ...")
+
     payload = {
         "video_id": video_id,
         "video_url": yt_url,
         "transcript": transcript
     }
-    
+
     rabbit_channel = await rabbitMq.get_channel()
 
     queue = await rabbit_channel.declare_queue(
@@ -70,6 +75,6 @@ async def generateQuiz(yt_url: str):
         routing_key=queue.name
     )
 
-    print("Quiz generation request pushed to RabbitMQ queue for processing.")
-    
+    log(f"generateQuiz: Quiz generation request pushed to RabbitMQ queue for video {video_id}")
+
     return {"message": "Quiz generation request has been queued for processing. Please check after some time for the generated quiz."}

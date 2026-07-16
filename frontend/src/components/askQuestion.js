@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import ManualTranscriptFallback from './ManualTranscriptFallback.js';
 
 const normalizeAnswerText = (text) => {
   return String(text || '')
@@ -16,6 +17,8 @@ export default function AskQuestion() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showManualFallback, setShowManualFallback] = useState(false);
+  const [manualFallbackSubmitted, setManualFallbackSubmitted] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +33,7 @@ export default function AskQuestion() {
     setAnswer('');
 
     try {
-      const response = await fetch('http://16.113.44.255/userQuery', {
+      const response = await fetch('http://localhost:8000/userQuery', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +117,38 @@ export default function AskQuestion() {
         </button>
       </form>
 
-      {error && <div className="mt-4 text-red-600">{error}</div>}
+      {error && (
+        <div className="mt-4">
+          <div className="text-red-600">{error}</div>
+          {!showManualFallback && !manualFallbackSubmitted && (
+            <button
+              type="button"
+              onClick={() => setShowManualFallback(true)}
+              className="mt-2 text-sm text-amber-600 underline hover:text-amber-800"
+            >
+              ⚠️ Try manual transcript paste instead
+            </button>
+          )}
+        </div>
+      )}
+
+      {showManualFallback && !manualFallbackSubmitted && (
+        <ManualTranscriptFallback
+          videoLink={videoLink}
+          onTranscriptSubmitted={(data) => {
+            setManualFallbackSubmitted(true);
+            setShowManualFallback(false);
+            setError('');
+          }}
+        />
+      )}
+
+      {manualFallbackSubmitted && (
+        <div className="mt-4 rounded-md bg-green-50 p-4 text-sm text-green-700">
+          ✅ Manual transcript submitted successfully! It has been queued for processing.
+          Please try asking your question again after some time.
+        </div>
+      )}
 
       {answer && (
         <div className="mt-6 rounded-lg border bg-white p-4 shadow-sm">

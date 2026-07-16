@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ManualTranscriptFallback from './ManualTranscriptFallback.js';
 
 export default function Quiz() {
     const [videoLink, setVideoLink] = useState('');
@@ -8,6 +9,10 @@ export default function Quiz() {
     const [score, setScore] = useState({ correct: 0, incorrect: 0 });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [queuedMessage, setQueuedMessage] = useState(null);
+    const [isTranscriptError, setIsTranscriptError] = useState(false);
+    const [showManualFallback, setShowManualFallback] = useState(false);
+    const [manualFallbackSubmitted, setManualFallbackSubmitted] = useState(false);
 
     const questions = quizData?.quiz ?? [];
 
@@ -19,13 +24,17 @@ export default function Quiz() {
 
         setLoading(true);
         setError(null);
+        setQueuedMessage(null);
         setQuizData(null);
         setSelectedAnswers({});
         setSubmitted(false);
         setScore({ correct: 0, incorrect: 0 });
+        setIsTranscriptError(false);
+        setShowManualFallback(false);
+        setManualFallbackSubmitted(false);
 
         try {
-            const response = await fetch('http://16.113.44.255/generateQuiz', {
+            const response = await fetch('http://localhost:8000/generateQuiz', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -40,14 +49,24 @@ export default function Quiz() {
             const data = await response.json();
             const fetchedQuestions = data?.quiz?.quiz ?? data?.quiz ?? [];
 
-            if (!Array.isArray(fetchedQuestions) || fetchedQuestions.length === 0) {
-                if(data?.message) {
-                    throw new Error(data.message);
-                }
+            if (Array.isArray(fetchedQuestions) && fetchedQuestions.length > 0) {
+                // Quiz data returned directly (already exists or fetched)
+                setQuizData({ quiz: fetchedQuestions });
+            } else if (data?.message?.includes("Quiz generation request has been queued")) {
+                // Successfully queued for generation - show info, no manual fallback
+                setQueuedMessage(data.message);
+            } else if (data?.message?.includes("Transacript not found")) {
+                // Transcript genuinely not found - show error AND manual fallback
+                setIsTranscriptError(true);
+                setError('Transcript not found for this video. You can paste a manual transcript instead.');
+                setShowManualFallback(true);
+            } else if (data?.message) {
+                // Any other message (e.g. not educational)
+                setIsTranscriptError(false);
+                setError(data.message);
+            } else {
                 throw new Error('No quiz questions were returned.');
             }
-
-            setQuizData({ quiz: fetchedQuestions });
         } catch (fetchError) {
             console.error('Error fetching quiz:', fetchError);
             setError(fetchError.message ?? 'Failed to fetch quiz.');
@@ -111,7 +130,44 @@ export default function Quiz() {
                 </button>
             </div>
 
-            {error && <div className="mb-4 text-red-600">{error}</div>}
+            {queuedMessage && (
+                <div className="mb-4 rounded-md bg-blue-50 p-4 text-sm text-blue-700">
+                    ⏳ {queuedMessage}
+                </div>
+            )}
+
+            {error && (
+                <div className="mb-4">
+                    <div className="text-red-600">{error}</div>
+                    {isTranscriptError && !showManualFallback && !manualFallbackSubmitted && (
+                        <button
+                            type="button"
+                            onClick={() => setShowManualFallback(true)}
+                            className="mt-2 text-sm text-amber-600 underline hover:text-amber-800"
+                        >
+                            ⚠️ Try manual transcript paste instead
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {showManualFallback && !manualFallbackSubmitted && (
+                <ManualTranscriptFallback
+                    videoLink={videoLink}
+                    onTranscriptSubmitted={(data) => {
+                        setManualFallbackSubmitted(true);
+                        setShowManualFallback(false);
+                        setError(null);
+                    }}
+                />
+            )}
+
+            {manualFallbackSubmitted && (
+                <div className="mb-4 rounded-md bg-green-50 p-4 text-sm text-green-700">
+                    ✅ Manual transcript submitted successfully! It has been queued for processing.
+                    Please try fetching the quiz again after some time.
+                </div>
+            )}
 
             {quizData && (
                 <>

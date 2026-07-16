@@ -4,6 +4,7 @@ python-dotenv
 aio-pika
 pymongo
 youtube-transcript-api
+supadata
 yt-dlp
 langchain
 langchain-core
