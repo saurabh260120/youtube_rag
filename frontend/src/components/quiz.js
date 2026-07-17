@@ -34,7 +34,7 @@ export default function Quiz() {
         setManualFallbackSubmitted(false);
 
         try {
-            const response = await fetch('http://localhost:8000/generateQuiz', {
+            const response = await fetch('/api/generateQuiz', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

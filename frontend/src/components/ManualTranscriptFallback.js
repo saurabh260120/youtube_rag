@@ -17,7 +17,7 @@ export default function ManualTranscriptFallback({ videoLink, onTranscriptSubmit
         setSubmitSuccess(null);
 
         try {
-            const response = await fetch('http://localhost:8000/submitManualTranscript', {
+            const response = await fetch('/api/submitManualTranscript', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
